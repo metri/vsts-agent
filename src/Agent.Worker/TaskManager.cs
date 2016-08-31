@@ -8,6 +8,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace Microsoft.VisualStudio.Services.Agent.Worker
 {
@@ -78,11 +79,15 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
             // first check to see if we already have the task
             string destDirectory = GetDirectory(task);
             Trace.Info($"Ensuring task exists: ID '{task.Id}', version '{task.Version}', name '{task.Name}', directory '{destDirectory}'.");
-            if (Directory.Exists(destDirectory))
+            if (Directory.Exists(destDirectory) && File.Exists(Path.Combine(destDirectory, "taskdownloadsucceed")))
             {
                 Trace.Info("Task already downloaded.");
                 return;
             }
+
+            // delete existing task folder.
+            Trace.Verbose("Deleting task destination folder: {0}", destDirectory);
+            IOUtil.DeleteDirectory(destDirectory, CancellationToken.None);
 
             // Inform the user that a download is taking place. The download could take a while if
             // the task zip is large. It would be nice to print the localized name, but it is not
@@ -108,10 +113,13 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                     }
                 }
 
-                ZipFile.ExtractToDirectory(zipFile, tempDirectory);
+                Directory.CreateDirectory(destDirectory);
+                ZipFile.ExtractToDirectory(zipFile, destDirectory);
+
+                Trace.Verbose("Create watermark file indicate task download succeed.");
+                File.WriteAllText(Path.Combine(destDirectory, "taskdownloadsucceed"), DateTime.UtcNow.ToString());
+
                 File.Delete(zipFile);
-                Directory.CreateDirectory(Path.GetDirectoryName(destDirectory));
-                Directory.Move(tempDirectory, destDirectory);
                 Trace.Info("Finished getting task.");
             }
             finally
