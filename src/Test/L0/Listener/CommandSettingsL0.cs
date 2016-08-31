@@ -669,6 +669,60 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests
             }
         }
 
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", nameof(CommandSettings))]
+        public void ValidateCommands()
+        {
+            using (TestHostContext hc = CreateTestContext())
+            {
+                // Arrange.
+                var command = new CommandSettings(hc, args: new string[] { "badcommand" });
+
+                // Act.
+                ArgumentOutOfRangeException ex = Assert.Throws<ArgumentOutOfRangeException>(() => command.Validation());
+
+                // Assert.
+                Assert.True(ex.ParamName.Contains("badcommand"));
+            }
+        }
+
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", nameof(CommandSettings))]
+        public void ValidateFlags()
+        {
+            using (TestHostContext hc = CreateTestContext())
+            {
+                // Arrange.
+                var command = new CommandSettings(hc, args: new string[] { "--badflag" });
+
+                // Act.
+                ArgumentOutOfRangeException ex = Assert.Throws<ArgumentOutOfRangeException>(() => command.Validation());
+
+                // Assert.
+                Assert.True(ex.ParamName.Contains("badflag"));
+            }
+        }
+
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", nameof(CommandSettings))]
+        public void ValidateArgs()
+        {
+            using (TestHostContext hc = CreateTestContext())
+            {
+                // Arrange.
+                var command = new CommandSettings(hc, args: new string[] { "--badargname", "bad arg value" });
+
+                // Act.
+                ArgumentOutOfRangeException ex = Assert.Throws<ArgumentOutOfRangeException>(() => command.Validation());
+
+                // Assert.
+                Assert.True(ex.ParamName.Contains("badargname"));
+            }
+        }
+
         private TestHostContext CreateTestContext([CallerMemberName] string testName = "")
         {
             TestHostContext hc = new TestHostContext(this, testName);

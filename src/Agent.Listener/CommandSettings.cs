@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Services.Agent.Util;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Microsoft.VisualStudio.Services.Agent.Listener
 {
@@ -11,6 +12,39 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
         private readonly CommandLineParser _parser;
         private readonly IPromptManager _promptManager;
         private readonly Tracing _trace;
+
+        private readonly string[] validCommands =
+        {
+            Constants.Agent.CommandLine.Commands.Configure,
+            Constants.Agent.CommandLine.Commands.Run,
+            Constants.Agent.CommandLine.Commands.Unconfigure
+        };
+
+        private readonly string[] validFlags =
+        {
+            Constants.Agent.CommandLine.Flags.AcceptTeeEula,
+            Constants.Agent.CommandLine.Flags.Commit,
+            Constants.Agent.CommandLine.Flags.Help,
+            Constants.Agent.CommandLine.Flags.Replace,
+            Constants.Agent.CommandLine.Flags.RunAsService,
+            Constants.Agent.CommandLine.Flags.Unattended,
+            Constants.Agent.CommandLine.Flags.Version
+        };
+
+        private readonly string[] validArgs =
+        {
+            Constants.Agent.CommandLine.Args.Agent,
+            Constants.Agent.CommandLine.Args.Auth,
+            Constants.Agent.CommandLine.Args.NotificationPipeName,
+            Constants.Agent.CommandLine.Args.Password,
+            Constants.Agent.CommandLine.Args.Pool,
+            Constants.Agent.CommandLine.Args.Token,
+            Constants.Agent.CommandLine.Args.Url,
+            Constants.Agent.CommandLine.Args.UserName,
+            Constants.Agent.CommandLine.Args.WindowsLogonAccount,
+            Constants.Agent.CommandLine.Args.WindowsLogonPassword,
+            Constants.Agent.CommandLine.Args.Work
+        };
 
         // Commands.
         public bool Configure => TestCommand(Constants.Agent.CommandLine.Commands.Configure);
@@ -36,6 +70,31 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
                 hostContext: context,
                 secretArgNames: Constants.Agent.CommandLine.Args.Secrets);
             _parser.Parse(args);
+        }
+
+        // Validate commandline parser result
+        public void Validation()
+        {
+            // detect unknown commands
+            List<string> unknownCommands = _parser.Commands.Where(x => !validCommands.Contains(x)).ToList();
+            if (unknownCommands.Count > 0)
+            {
+                throw new ArgumentOutOfRangeException(string.Join(",", unknownCommands), nameof(_parser.Commands));
+            }
+
+            // detect unknown flags
+            List<string> unknownFlags = _parser.Flags.Where(x => !validFlags.Contains(x)).ToList();
+            if (unknownFlags.Count > 0)
+            {
+                throw new ArgumentOutOfRangeException(string.Join(",", unknownFlags), nameof(_parser.Flags));
+            }
+
+            // detect unknown args
+            List<string> unknownArgs = _parser.Args.Keys.Where(x => !validArgs.Contains(x)).ToList();
+            if (unknownArgs.Count > 0)
+            {
+                throw new ArgumentOutOfRangeException(string.Join(",", unknownArgs), nameof(_parser.Args.Keys));
+            }
         }
 
         //
